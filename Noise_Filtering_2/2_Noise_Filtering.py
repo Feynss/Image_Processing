@@ -11,128 +11,120 @@ import copy
 # Выяснить, какой фильтр показал лучший результат фильтрации шума.
 
 
-# 1
+# Шум Гаусса
 image = cv2.imread('img.jpg')
 image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 plt.imshow(image_gray, cmap="gray")
+plt.title("Серое исходное изображение")
 plt.show()
 
 mean = 0
 stddev = 100
 noise_gauss = np.zeros(image_gray.shape, np.uint8)
 cv2.randn(noise_gauss, mean, stddev)
-plt.imshow(noise_gauss, cmap="gray")
-plt.show()
 
 image_noise_gauss = cv2.add(image_gray,noise_gauss)
 plt.imshow(image_noise_gauss, cmap="gray")
+plt.title("Добавленный Гаусс шум")
 plt.show()
 
-noise =  np.random.randint(0, 101, size = (image_gray.shape[0], image_gray.shape[1]), dtype=int)
-zeros_pixel = np.where(noise == 0)
-ones_pixel = np.where(noise == 100)
-bg_image = np.ones(image_gray.shape, np.uint8) * 128
-bg_image[zeros_pixel] = 0
-bg_image[ones_pixel] = 255
-plt.imshow(bg_image, cmap="gray")
+mse_gauss = mean_squared_error(image_gray, image_noise_gauss)
+(ssim, diff) = structural_similarity(image_gray, image_noise_gauss, full=True)
+print("Гаусс шум MSE, SSIM: ", mse_gauss, ssim)
+
+
+image_sp_median = cv2.medianBlur(image_noise_gauss, 3)
+plt.imshow(image_sp_median, cmap="gray")
+plt.title("Медианный фильтр")
 plt.show()
-
-image_noise_constant = cv2.add(image_gray,bg_image)
-plt.imshow(image_noise_constant, cmap="gray")
-plt.show()
-
-
-# 2
-image_sp = copy.deepcopy(image_gray)
-
-image_sp[zeros_pixel] = 0
-image_sp[ones_pixel] = 255
-
-mse_sp = mean_squared_error(image_gray, image_sp)
-(ssim_sp, diff) = structural_similarity(image_gray, image_sp, full=True)
-print("Изначальный: ", mse_sp, ssim_sp)
-
-plt.imshow(image_sp, cmap="gray")
-plt.show()
-
-image_sp_median = cv2.medianBlur(image_sp, 3)
 
 mse_sp_median = mean_squared_error(image_gray, image_sp_median)
-(ssim_sp_median, diff) = structural_similarity(image_gray, image_sp_median, full=True)
+(ssim_sp_median, diff11) = structural_similarity(image_gray, image_sp_median, full=True)
 print("Медианный: ", mse_sp_median, ssim_sp_median)
 
-plt.imshow(image_sp_median, cmap="gray")
+
+image_sp_gauss = cv2.GaussianBlur(image_noise_gauss, (5, 5), 0)
+plt.imshow(image_sp_gauss, cmap="gray")
+plt.title("Фильтр Гаусса")
 plt.show()
 
+mse_sp_gauss = mean_squared_error(image_gray, image_sp_gauss)
+(ssim_sp_gauss, diff22) = structural_similarity(image_gray, image_sp_gauss, full=True)
+print("Гауссовский: ", mse_sp_gauss, ssim_sp_gauss)
 
-image_gauss_gauss = cv2.GaussianBlur(image_noise_gauss,(5,5),0)
-image_gauss_bilat = cv2.bilateralFilter(image_noise_gauss,9,75,75)
-image_gauss_nlm = cv2.fastNlMeansDenoising(image_noise_gauss, h = 20)
 
-mse_geom = mean_squared_error(image_gray, image_gauss_gauss)
-(ssim_geom, diff) = structural_similarity(image_gray, image_gauss_gauss, full=True)
-print("Гаусс: ", mse_geom, ssim_geom)
-plt.imshow(image_gauss_gauss, cmap="gray")
+image_sp_bilat = cv2.bilateralFilter(image_noise_gauss, 9, 75, 75)
+plt.imshow(image_sp_bilat, cmap="gray")
+plt.title("Билатериальный фильтр")
 plt.show()
 
-mse_geom = mean_squared_error(image_gray, image_gauss_bilat)
-(ssim_geom, diff) = structural_similarity(image_gray, image_gauss_bilat, full=True)
-print("Билатериальный: ", mse_geom, ssim_geom)
-plt.imshow(image_gauss_bilat, cmap="gray")
+mse_sp_bilat = mean_squared_error(image_gray, image_sp_bilat)
+(ssim_sp_bilat, diff33) = structural_similarity(image_gray, image_sp_bilat, full=True)
+print("Билатериальный: ", mse_sp_bilat, ssim_sp_bilat)
+
+
+image_sp_nlm = cv2.fastNlMeansDenoising(image_noise_gauss, h=20)
+plt.imshow(image_sp_nlm, cmap="gray")
+plt.title("Фильтр нелокальных средних")
 plt.show()
 
-mse_geom = mean_squared_error(image_gray, image_gauss_nlm)
-(ssim_geom, diff) = structural_similarity(image_gray, image_gauss_nlm, full=True)
-print("Среднее: ", mse_geom, ssim_geom)
-plt.imshow(image_gauss_nlm, cmap="gray")
+mse_sp_nlm = mean_squared_error(image_gray, image_sp_nlm)
+(ssim_sp_nlm, diff44) = structural_similarity(image_gray, image_sp_nlm, full=True)
+print("nlm: ", mse_sp_nlm, ssim_sp_nlm)
+
+
+
+# 2 Постоянный шум
+noise_intensity = 50
+uniform_noise = np.random.uniform(-noise_intensity, noise_intensity, image_gray.shape)
+uniform_noise = uniform_noise.astype(np.int16)
+image_uniform_noise = image_gray.astype(np.int16) + uniform_noise
+image_uniform_noise = np.clip(image_uniform_noise, 0, 255).astype(np.uint8)
+
+plt.imshow(image_uniform_noise, cmap="gray")
+plt.title("Добавленный постоянный шум")
 plt.show()
 
+mse_noise = mean_squared_error(image_gray, image_uniform_noise)
+(ssim, diff55) = structural_similarity(image_gray, image_uniform_noise, full=True)
+print("Постоянный шум MSE, SSIM: ", mse_noise, ssim)
 
-# 2 (другие параметры)
-image_sp = copy.deepcopy(image_gray)
 
-image_sp[zeros_pixel] = 0
-image_sp[ones_pixel] = 255
-
-mse_sp = mean_squared_error(image_gray, image_sp)
-(ssim_sp, diff) = structural_similarity(image_gray, image_sp, full=True)
-print("Изначальный: ", mse_sp, ssim_sp)
-
-plt.imshow(image_sp, cmap="gray")
+image_noise_median = cv2.medianBlur(image_uniform_noise, 3)
+plt.imshow(image_noise_median, cmap="gray")
+plt.title("Медианный фильтр")
 plt.show()
 
-image_sp_median = cv2.medianBlur(image_sp, 9)
+mse_noise_median = mean_squared_error(image_gray, image_noise_median)
+(ssim_noise_median, diff66) = structural_similarity(image_gray, image_noise_median, full=True)
+print("Медианный: ", mse_noise_median, ssim_noise_median)
 
-mse_sp_median = mean_squared_error(image_gray, image_sp_median)
-(ssim_sp_median, diff) = structural_similarity(image_gray, image_sp_median, full=True)
-print("Медианный: ", mse_sp_median, ssim_sp_median)
 
-plt.imshow(image_sp_median, cmap="gray")
+image_noise_gauss = cv2.GaussianBlur(image_uniform_noise, (5, 5), 0)
+plt.imshow(image_noise_gauss, cmap="gray")
+plt.title("Фильтр Гаусса")
 plt.show()
 
+mse_noise_gauss = mean_squared_error(image_gray, image_noise_gauss)
+(ssim_noise_gauss, diff77) = structural_similarity(image_gray, image_noise_gauss, full=True)
+print("Гауссовский: ", mse_noise_gauss, ssim_noise_gauss)
 
-image_gauss_gauss = cv2.GaussianBlur(image_noise_gauss,(3,3),0)
-image_gauss_bilat = cv2.bilateralFilter(image_noise_gauss,12,150,150)
-image_gauss_nlm = cv2.fastNlMeansDenoising(image_noise_gauss, h = 80)
 
-mse_geom = mean_squared_error(image_gray, image_gauss_gauss)
-(ssim_geom, diff) = structural_similarity(image_gray, image_gauss_gauss, full=True)
-print("Гаусс: ", mse_geom, ssim_geom)
-plt.imshow(image_gauss_gauss, cmap="gray")
+image_noise_bilat = cv2.bilateralFilter(image_uniform_noise, 9, 75, 75)
+plt.imshow(image_noise_bilat, cmap="gray")
+plt.title("Билатеральный фильтр")
 plt.show()
 
-mse_geom = mean_squared_error(image_gray, image_gauss_bilat)
-(ssim_geom, diff) = structural_similarity(image_gray, image_gauss_bilat, full=True)
-print("Билатериальный: ", mse_geom, ssim_geom)
-plt.imshow(image_gauss_bilat, cmap="gray")
+mse_noise_bilat = mean_squared_error(image_gray, image_noise_bilat)
+(ssim_noise_bilat, diff88) = structural_similarity(image_gray, image_noise_bilat, full=True)
+print("Билатериальный: ", mse_noise_bilat, ssim_noise_bilat)
+
+
+image_noise_nlm = cv2.fastNlMeansDenoising(image_uniform_noise, h=20)
+plt.imshow(image_noise_nlm, cmap="gray")
+plt.title("Фильтр нелокальных средних")
 plt.show()
 
-mse_geom = mean_squared_error(image_gray, image_gauss_nlm)
-(ssim_geom, diff) = structural_similarity(image_gray, image_gauss_nlm, full=True)
-print("Среднее: ", mse_geom, ssim_geom)
-plt.imshow(image_gauss_nlm, cmap="gray")
-plt.show()
-
-# При kernel size = 3, лучше всех справляется медианный фильтр,
-# когда остальные недостаточно убирают шум или
-# чересчур смазывают изображение.
+mse_noise_nlm = mean_squared_error(image_gray, image_noise_nlm)
+(ssim_noise_nlm, diff99) = structural_similarity(image_gray, image_noise_nlm, full=True)
+print("nlm: ", mse_noise_nlm, ssim_noise_nlm)
