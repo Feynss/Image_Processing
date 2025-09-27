@@ -76,6 +76,13 @@ plt.show()
 plt.imshow(gray, cmap="gray")
 plt.show()
 
+mean_src, std_src = gray.mean(), gray.std()
+mean_ref, std_ref = eq_gray.mean(), eq_gray.std()
+
+gray_corrected = (gray - mean_src) / (std_src + 1e-8) * std_ref + mean_ref
+gray_corrected = np.clip(gray_corrected, 0, 255).astype(np.uint8)
+plt.imshow(gray_corrected, cmap="gray")
+plt.show()
 
 # 6
 for i in range(50, 250, 50):
