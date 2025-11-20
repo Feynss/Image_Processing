@@ -302,5 +302,5 @@ for k_val, result in sorted(performance_results.items()):
         highest_acc = accuracy
         opt_k = k_val
 
-print(f"Итог: Наилучший результат при k = {opt_k} при точности нахождения {highest_acc:.1%}")
+print(f"\nИтог: Наилучший результат при k = {opt_k} при точности нахождения {highest_acc:.1%}")
 print(f"Данная задача эффективно решается при k = {opt_k}")
